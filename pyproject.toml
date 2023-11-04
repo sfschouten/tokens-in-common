@@ -1,0 +1,22 @@
+[build-system]
+requires = ["hatchling"]                # packages needed for building
+build-backend = "hatchling.build"       # python object used to perform the build
+
+[project]
+name = "tokens_in_common"
+version = "0.0.1"
+authors = [
+  { name="Stefan F. Schouten", email="sfschouten@gmail.com" },
+]
+description = "Facilitates efficient inference of texts that have *tokens in common* on autoregressive language models."
+readme = "README.md"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/sfschouten/tokens_in_common"
+"Bug Tracker" = "https://github.com/sfschouten/tokens_in_common/issues"
