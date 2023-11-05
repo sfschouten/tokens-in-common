@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 
 import numpy as np
 
-from tokens_in_common.utils import Reference, IdMapping
+from tokens_in_common.utils import Reference
 
 T = TypeVar('T')
 U = TypeVar('U')
@@ -153,7 +153,7 @@ class MultiText(Generic[T]):
 
         total_nr_elements = sum(len(v.component.value) for v in self._vertices)
         attention_mask = [[False] * total_nr_elements for _ in range(total_nr_elements)]
-        nr_vertex_positions = len(set(self.vertex_positions))
+        nr_vertex_positions = len(set(v.position for v in self.vertices))
         idx = {}
         for root in roots:
             if pos_method == MultiText.PositioningMethod.FULL_ALIGNMENT:
@@ -169,14 +169,14 @@ class MultiText(Generic[T]):
             queue: list[tuple[MultiText.Vertex, MultiText.Vertex]] = [(root, None)]
             while queue:
                 v, parent = queue.pop(0)
-                parent_end_idx = idx[id(parent)][1] if parent is not None else -1
+                parent_last_idx = idx[id(parent)][1] - 1 if parent is not None else -1
                 length = len(v.component.value)
 
                 start = {   # where to start for the position_ids of this vertex
                     MultiText.PositioningMethod.FULL_ALIGNMENT:
                         pos_starts[v.position],
                     MultiText.PositioningMethod.NO_ALIGNMENT:
-                        token_pos_ids[parent_end_idx] if parent is not None else 0,
+                        token_pos_ids[parent_last_idx] if parent is not None else 0,
                 }[pos_method]
 
                 if id(v) not in idx:
@@ -194,7 +194,7 @@ class MultiText(Generic[T]):
                     #  (1) the same things as the last token of this vertex's parent; and
                     if parent is not None:
                         attention_mask[i] = [
-                            a or b for a, b in zip(attention_mask[i], attention_mask[parent_end_idx - 1])
+                            a or b for a, b in zip(attention_mask[i], attention_mask[parent_last_idx])
                         ]
                     #  (2) the previous tokens within this vertex
                     for j in range(start_idx, i + 1):

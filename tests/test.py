@@ -31,7 +31,7 @@ def test_standard_full_equivalency():
     for key, test_multitext in test_multitexts.items():
         # tokenize the multitext
         tok_multitext = tokenize_multitext(test_multitext, lambda x: TEST_TOKENIZER(x).encodings[0])
-        max_position = max(tok_multitext.vertex_positions)
+        max_position = max(v.position for v in tok_multitext.vertices)
 
         # forward model
         tokens, positions, attention_mask, token_vertex_elements = tok_multitext.prepare_inputs()

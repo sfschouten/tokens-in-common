@@ -1,12 +1,10 @@
 import itertools
-from typing import Callable, TypeVar
+from typing import Callable
 
 from tokenizers import Encoding
 
 from tokens_in_common.multitext import MultiText
 from tokens_in_common.utils import Reference
-
-T = TypeVar('T')
 
 
 def tokenize_multitext(multitext: MultiText[str], tokenize_fn: Callable[[str], Encoding]) -> MultiText[list[int]]:
@@ -100,37 +98,30 @@ def tokenize_multitext(multitext: MultiText[str], tokenize_fn: Callable[[str], E
                 # current and new tokenization are already the same, continue
                 continue
 
-            if len(cur) == len(new):
-                # the same string reference was tokenized differently in two branches
-                # diff_idx = set(i for i in range(len(cur)) if cur[i] != new[i])
-                # if 0 in diff_idx:
-                #     all_token_vertices[()]
-                # elif len(cur) - 1 in diff_idx:
-                raise NotImplementedError
-            else:
-                # the tokenization of two branches has yielded different results for their common prefix
-                short = cur if len(cur) < len(new) else new
-                long = cur if len(cur) > len(new) else new
+            assert len(cur) != len(new), "Somehow the new tokenization both gained and lost tokens w.r.t. the current."
 
-                assert long[:len(short)] == short, "Somehow the tokenization did not just change at the end?"
+            # the tokenization of two branches has yielded different results for their common prefix
+            short = cur if len(cur) < len(new) else new
+            long = cur if len(cur) > len(new) else new
 
-                if new == short:
-                    # set common subsequence as new value of this vertex
-                    all_token_vertices[vertex_id].value = short
+            assert long[:len(short)] == short, "Somehow the tokenization did not just change at the end?"
 
-                    # add part that they do not have in common to 'next' vertex
-                    successors = [successor_dict[vertex_id] for j in range(0, leaf_i)]
-                    for successor in successors:
-                        assert successor in all_token_vertices, \
-                            "Somehow the successor vertex of a previous leaf ancestry does not exist yet?"
-                        for x in long[len(short):]:
-                            all_token_vertices[successor].value.insert(0, x)
-                else:  # old == short
-                    # add part that they do not have in common to 'next' vertex
-                    successor = successor_dict[vertex_id]
-                    assert successor not in all_token_vertices, \
-                        "Somehow the current vertex's successor already exists?"
+            if new == short:
+                # set common subsequence as new value of this vertex
+                all_token_vertices[vertex_id].value = short
+
+                # add part that they do not have in common to 'next' vertex
+                successors = [successor_dict[vertex_id] for j in range(0, leaf_i)]
+                for successor in successors:
+                    assert successor in all_token_vertices, \
+                        "Somehow the successor vertex of a previous leaf ancestry does not exist yet?"
                     for x in long[len(short):]:
-                        new_token_vertices[successor].value.insert(0, x)
+                        all_token_vertices[successor].value.insert(0, x)
+            else:  # old == short
+                # add part that they do not have in common to 'next' vertex
+                successor = successor_dict[vertex_id]
+                assert successor not in all_token_vertices, "Somehow the current vertex's successor already exists?"
+                for x in long[len(short):]:
+                    new_token_vertices[successor].value.insert(0, x)
 
     return multitext.copy(new_component_map=all_token_vertices)
